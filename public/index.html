@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  <title>Translate</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #22d3ee;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --ok: #10b981;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: linear-gradient(180deg, #0b1022, var(--bg) 40%);
+      display: grid;
+      place-items: start center;
+      padding: 32px 16px 48px;
+    }
+    .app {
+      width: min(900px, 100%);
+      background: linear-gradient(180deg, #0b1220, var(--panel));
+      border: 1px solid #1f2937;
+      border-radius: var(--radius);
+      box-shadow: 0 12px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+    header {
+      padding: 20px 22px;
+      background: radial-gradient(1200px 200px at 10% -20%, rgba(34,211,238,.25), transparent),
+                  radial-gradient(900px 160px at 90% -40%, rgba(96,165,250,.18), transparent);
+      border-bottom: 1px solid #1f2937;
+    }
+    h1 { margin: 0; font-size: 20px; letter-spacing: .3px; display: flex; align-items: center; gap: 10px; }
+    h1 .badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(34,211,238,.15); border: 1px solid rgba(34,211,238,.35); color: #a5f3fc; }
+    main { padding: 22px; display: grid; gap: 18px; }
+    .row { display: grid; gap: 10px; }
+    label { font-size: 13px; color: var(--muted); }
+    input[type="text"], select, textarea { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #243244; background: #0b1220; color: var(--text); outline: none; transition: border .2s ease, box-shadow .2s ease; }
+    input[type="text"]:focus, select:focus, textarea:focus { border-color: #334155; box-shadow: 0 0 0 3px rgba(34,211,238,.18); }
+    textarea { min-height: 130px; resize: vertical; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { display: grid; gap: 12px; grid-template-columns: 2fr 2fr 3fr; }
+    .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    button { appearance: none; border: 1px solid #1f2937; background: linear-gradient(180deg, #0ea5e9, #22d3ee); color: #0b1220; font-weight: 700; letter-spacing: .3px; padding: 10px 16px; border-radius: 10px; cursor: pointer; transition: transform .02s ease, box-shadow .2s ease, filter .2s ease; box-shadow: 0 6px 24px rgba(34,211,238,.25); }
+    button:hover { filter: brightness(1.05); }
+    button:active { transform: translateY(1px); }
+    button.secondary { background: transparent; color: var(--text); border-color: #334155; box-shadow: none; }
+    .status { font-size: 13px; color: var(--muted); }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--danger); }
+    .card { border: 1px solid #1f2937; background: #0b1220; border-radius: 12px; padding: 14px; }
+    pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; overflow-x: auto; }
+    .result { white-space: pre-wrap; word-break: break-word; padding: 12px 14px; border-radius: 10px; border: 1px solid #243244; background: #0b1022; min-height: 72px; }
+    footer { padding: 16px 22px 22px; color: var(--muted); font-size: 12px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.15); border-top-color: rgba(255,255,255,.8); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 720px) { .grid, .grid-3 { grid-template-columns: 1fr; } }
+    /* --- Mobile tweaks for better responsiveness --- */
+    @media (max-width: 920px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 20px 10px 28px; }
+      main { padding: 16px; }
+      header { padding: 16px; }
+      .app { border-radius: 12px; }
+      h1 { font-size: 18px; }
+      textarea { min-height: 110px; }
+    }
+    @media (max-width: 480px) {
+      .actions { flex-direction: column; align-items: stretch; }
+      .actions button, .actions .secondary { width: 100%; }
+      label { font-size: 12px; }
+      input[type="text"], select, textarea { padding: 11px 12px; }
+      .card { padding: 12px; }
+    }
+
+    /* Prevent horizontal scroll on narrow screens */
+    .result { overflow-wrap: anywhere; word-break: break-word; }
+    pre, code { max-width: 100%; overflow-x: auto; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Google Translate API Wrapper">
+    <header>
+      <h1>
+        Google Translate API Wrapper
+      </h1>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="grid-3">
+          <div class="row">
+            <label for="endpoint">Endpoint</label>
+            <input type="text" id="endpoint" placeholder="https://YOUR-SUBDOMAIN.workers.dev/v1/api/translate/" />
+          </div>
+          <div class="row">
+            <label for="sl">Source language (sl)</label>
+            <input type="text" id="sl" placeholder="e.g., en" value="en" />
+          </div>
+          <div class="row">
+            <label for="tl">Target language (tl)</label>
+            <input type="text" id="tl" placeholder="e.g., ar" value="ar" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <label for="q">Text to translate</label>
+          <textarea id="q" placeholder="Type something to translate...">hello world</textarea>
+        </div>
+
+        <div class="actions" style="margin-top:12px">
+          <button id="translateBtn">Translate</button>
+          <button class="secondary" id="swapBtn" title="Swap source & target">Swap</button>
+          <span class="status" id="status"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <label for="result">Result</label>
+        <div id="result" class="result" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <details>
+          <summary>cURL example</summary>
+          <pre><code id="curl"></code></pre>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const $ = (q) => document.querySelector(q);
+    const endpointEl = $("#endpoint");
+    const slEl = $("#sl");
+    const tlEl = $("#tl");
+    const qEl = $("#q");
+    const resultEl = $("#result");
+    const statusEl = $("#status");
+    const curlEl = $("#curl");
+
+    const ABSOLUTE_DEFAULT = "https://translate.theshoqanebi.com/v1/api/translate/";
+
+    // Set a safe default endpoint. Never construct a file:/// URL.
+    (function setDefaultEndpoint() {
+      let ep = ABSOLUTE_DEFAULT;
+      try {
+        const { protocol, origin } = window.location;
+        if (protocol === 'http:' || protocol === 'https:') {
+          ep = origin.replace(/\/$/, '') + '/v1/api/translate/';
+        }
+      } catch (_) {}
+      endpointEl.value = ep;
+    })();
+
+    function buildPayload() {
+      return {
+        "source-lang": slEl.value.trim() || "en",
+        "target-lang": tlEl.value.trim() || "ar",
+        "query": qEl.value
+      };
+    }
+
+    function updateCurl() {
+      const ep = (endpointEl.value || ABSOLUTE_DEFAULT).trim();
+      const json = JSON.stringify(buildPayload());
+      const escaped = json.replace(/'/g, "'\\''");
+      curlEl.textContent = `curl -s -X POST "${ep}" \\
+  -H "Content-Type: application/json" \\
+  -d '${escaped}'`;
+    }
+    updateCurl();
+
+    $("#swapBtn").addEventListener("click", () => {
+      const tmp = slEl.value; slEl.value = tlEl.value; tlEl.value = tmp; updateCurl();
+    });
+
+    for (const el of [endpointEl, slEl, tlEl, qEl]) {
+      el.addEventListener("input", updateCurl);
+    }
+
+    $("#translateBtn").addEventListener("click", async () => {
+      const endpoint = endpointEl.value.trim();
+      const payload = buildPayload();
+
+      resultEl.textContent = "";
+      statusEl.className = "status";
+      statusEl.innerHTML = '<span class="spinner" aria-hidden="true"></span> Translating…';
+
+      try {
+        const started = performance.now();
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json().catch(() => null);
+
+        if (!resp.ok || !data || data.status !== "ok") {
+          const err = (data && data.error) ? data.error : (resp.status + " " + resp.statusText);
+          throw new Error(err);
+        }
+
+        resultEl.textContent = data.result || "";
+        const ms = Math.max(0, Math.round(performance.now() - started));
+        statusEl.textContent = `Done in ${ms} ms`;
+        statusEl.className = "status ok";
+      } catch (e) {
+        resultEl.textContent = "";
+        statusEl.textContent = "Error: " + (e && e.message ? e.message : "Unknown error");
+        statusEl.className = "status err";
+      }
+    });
+  </script>
+</body>
+</html>
